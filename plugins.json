@@ -2,95 +2,18 @@
     "version": 1,
     "plugins": [
         {
-            "id": "ophim",
-            "name": "OPhim",
-            "version": "1.0.4",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/ophim_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/ophim.ico"
-        },
-        {
-            "id": "kkphim",
-            "name": "KKPhim",
-            "version": "1.0.2",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/kkphim_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/kkphim.png"
-        },
-        {
-            "id": "nguonc",
-            "name": "Phim NguonC",
-            "version": "1.1.5",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/nguonc_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/nguonC.png"
-        },
-        {
-            "id": "phimhdcs",
-            "name": "PhimHDCSS",
-            "version": "1.1.4",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/phimhdcs_plugin.js",
-            "iconUrl": "https://phimhdcss.com/favicon.ico"
-        },
-        {
-            "id": "missav",
-            "name": "MissAV",
+            "id": "mv",
+            "name": "MV",
             "version": "1.1.3",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/av_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/missav.ico"
+            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/zax/refs/heads/main/av_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/loiikoii/zax/refs/heads/main/miss.ico"
         },
         {
             "id": "123av",
             "name": "123AV",
             "version": "1.0.4",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/123av_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/missav.ico"
-        },
-        {
-            "id": "avdbapi",
-            "name": "AVDB JAV",
-            "version": "1.0.4",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/avdbapi_plugin.js",
-            "iconUrl": "https://avdbapi.com/favicon.ico"
-        },
-        {
-            "id": "sextop1",
-            "name": "Sextop1",
-            "version": "1.1.8",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/top1_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/sextop1.webp"
-        },
-        {
-            "id": "sextop2",
-            "name": "Sextop2",
-            "version": "1.1.6",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/top2_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/sextop1.webp"
-        },
-        {
-            "id": "topxx",
-            "name": "TopXX",
-            "version": "1.0.1",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/topxx_plugin.js",
-            "iconUrl": "https://topxx.vip/favicon.ico"
-        },
-        {
-            "id": "javhd",
-            "name": "JavHD",
-            "version": "1.0.5",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/jhd_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/javhd.ico"
-        },
-        {
-            "id": "vlxx",
-            "name": "VLXX",
-            "version": "1.0.5",
-            "scriptUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/vlxx_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/vlxx.ico"
-        },
-        {
-            "id": "cobephim",
-            "name": "CôBe Phim",
-            "version": "1.0.5",
-            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/vax/refs/heads/main/plugins/cobephim_plugin.js",
-            "iconUrl": "https://raw.githubusercontent.com/TheVinhLy/repo/main/plugins/cobephim.ico"
+            "scriptUrl": "https://raw.githubusercontent.com/loiikoii/zax/refs/heads/main/123av_plugin.js",
+            "iconUrl": "https://raw.githubusercontent.com/loiikoii/zax/refs/heads/main/miss.ico"
         }
     ]
 }
