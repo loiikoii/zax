@@ -4,8 +4,8 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "123av",
-        "name": "123AV",
+        "id": "123",
+        "name": "123",
         "version": "1.0.4",
         "baseUrl": "https://123av.org",
         "referrer": "https://123av.org/",
