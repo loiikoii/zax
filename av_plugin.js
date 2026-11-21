@@ -4,8 +4,8 @@
 
 function getManifest() {
     return JSON.stringify({
-        "id": "av",
-        "name": "AV",
+        "id": "mv",
+        "name": "MV",
         "version": "1.1.3",
         "baseUrl": "https://missav.media",
         "referrer": "https://missav.media/",
