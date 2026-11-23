@@ -253,37 +253,51 @@ function parseMovieDetail(html) {
 }
 
 function parseDetailResponse(html, episodeIdOrUrl) {
-    var detail = JSON.parse(parseMovieDetail(html));
-    var url = "";
+    try {
+        var detail = JSON.parse(parseMovieDetail(html));
+        var url = "";
+        var target = episodeIdOrUrl ? String(episodeIdOrUrl).trim().replace(/\\\//g, "/") : "";
 
-    if (episodeIdOrUrl && /^https?:\/\//i.test(String(episodeIdOrUrl).trim())) {
-        url = String(episodeIdOrUrl).trim();
-    } else if (detail && detail.servers && detail.servers.length > 0) {
-        if (episodeIdOrUrl) {
-            for (var i = 0; i < detail.servers.length; i++) {
-                var eps = detail.servers[i].episodes || [];
-                for (var j = 0; j < eps.length; j++) {
-                    if (eps[j].id === episodeIdOrUrl || eps[j].url === episodeIdOrUrl) {
-                        url = eps[j].url || eps[j].id;
-                        break;
+        if (target && /^https?:\/\//i.test(target)) {
+            url = target;
+        } else if (detail && detail.servers && detail.servers.length > 0) {
+            if (target) {
+                for (var i = 0; i < detail.servers.length; i++) {
+                    var eps = detail.servers[i].episodes || [];
+                    for (var j = 0; j < eps.length; j++) {
+                        var epId = String(eps[j].id || "").replace(/\\\//g, "/");
+                        var epUrl = String(eps[j].url || "").replace(/\\\//g, "/");
+                        if (epId === target || epUrl === target) {
+                            url = epUrl || epId;
+                            break;
+                        }
                     }
+                    if (url) break;
                 }
-                if (url) break;
+            }
+            if (!url) {
+                url = detail.servers[0].episodes[0].url || detail.servers[0].episodes[0].id || "";
             }
         }
-        if (!url) {
-            url = detail.servers[0].episodes[0].url || detail.servers[0].episodes[0].id;
-        }
-    }
 
-    return JSON.stringify({
-        url: url,
-        headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Referer": "https://vnjav.net/"
-        },
-        subtitles: []
-    });
+        return JSON.stringify({
+            url: url,
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://vnjav.net/"
+            },
+            subtitles: []
+        });
+    } catch (e) {
+        return JSON.stringify({
+            url: "",
+            headers: {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Referer": "https://vnjav.net/"
+            },
+            subtitles: []
+        });
+    }
 }
 function parseCategoriesResponse(html) {
     return JSON.stringify([
