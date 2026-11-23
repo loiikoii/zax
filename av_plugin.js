@@ -1,10 +1,10 @@
 function getManifest() {
     return JSON.stringify({
-        "id": "mv",
-        "name": "MV",
-        "version": "1.1.3",
+        "id": "vnjav",
+        "name": "VNJav",
+        "version": "1.2.0",
         "baseUrl": "https://vnjav.net",
-        "iconUrl": "https://raw.githubusercontent.com/loiikoii/zax/refs/heads/main/miss.ico",
+        "iconUrl": "https://stpaulclinic.vn/vaapp/plugins/missav.ico",
         "isEnabled": true,
         "isAdult": true,
         "type": "VIDEO",
@@ -110,14 +110,13 @@ function parseListResponse(html) {
     while ((match = linkRegex.exec(html)) !== null) {
         var href = match[1] || "";
         var inner = match[2] || "";
+
+        if (href.indexOf("/video/") === -1 && href.indexOf("/dien-vien/") === -1) continue;
+
         var imgMatch = inner.match(/<img[^>]+(?:data-src|src)=["']([^"']+)["'][^>]*>/i);
         if (!imgMatch) continue;
 
-        if (href.indexOf("vnjav.net") !== -1 && href.indexOf("https://vnjav.net") !== 0) {
-            href = href.replace(/^https?:\/\/[^/]+/i, "");
-        }
         if (href.indexOf("http") === 0 && href.indexOf("https://vnjav.net") !== 0) continue;
-        if (!href || href === "/" || href.indexOf("#") === 0) continue;
 
         var slug = href.replace(/^https?:\/\/vnjav\.net/i, "");
         if (slug.indexOf("/") !== 0) slug = "/" + slug;
@@ -166,16 +165,18 @@ function parseSearchResponse(html) {
 
 function parseMovieDetail(html) {
     try {
-        var ogTitle = html.match(/property=["']og:title["'][^>]+content=["']([^"']+)["']/i);
-        var ogImage = html.match(/property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
-        var ogDesc = html.match(/property=["']og:description["'][^>]+content=["']([^"']+)["']/i);
+        var cleanHtml = String(html || "").replace(/\\"/g, '"').replace(/\\\//g, "/");
+
+        var ogTitle = cleanHtml.match(/property=["']og:title["'][^>]+content=["']([^"']+)["']/i);
+        var ogImage = cleanHtml.match(/property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
+        var ogDesc = cleanHtml.match(/property=["']og:description["'][^>]+content=["']([^"']+)["']/i);
 
         var servers = [];
         var seenUrls = {};
 
         function addServer(serverName, streamUrl) {
             if (!streamUrl) return;
-            var cleanUrl = String(streamUrl).replace(/\\\//g, "/").trim();
+            var cleanUrl = String(streamUrl).trim();
             if (!cleanUrl || seenUrls[cleanUrl]) return;
             seenUrls[cleanUrl] = true;
             servers.push({
@@ -192,41 +193,49 @@ function parseMovieDetail(html) {
         }
 
         // 1. Quét các khối có "label" và "embedUrl" (Server 1, Server 2, Server 3...)
-        var serverItemRegex = /"label"\s*:\s*"([^"]+)"\s*,\s*"embedUrl"\s*:\s*"([^"]+)"/gi;
-        var itemMatch;
-        while ((itemMatch = serverItemRegex.exec(html)) !== null) {
-            addServer(itemMatch[1], itemMatch[2]);
+        var objRegex = /\{[^{}]*"embedUrl"\s*:\s*"([^"]+)"[^{}]*\}/gi;
+        var objMatch;
+        while ((objMatch = objRegex.exec(cleanHtml)) !== null) {
+            var block = objMatch[0];
+            var embedVal = objMatch[1];
+            var lblMatch = block.match(/"label"\s*:\s*"([^"]+)"/i);
+            var lblName = lblMatch ? lblMatch[1] : ("Server " + (servers.length + 1));
+            addServer(lblName, embedVal);
         }
 
-        // Dự phòng nếu "embedUrl" đứng trước "label"
-        var embedFirstRegex = /"embedUrl"\s*:\s*"([^"]+)"[^}]*?"label"\s*:\s*"([^"]+)"/gi;
-        var efMatch;
-        while ((efMatch = embedFirstRegex.exec(html)) !== null) {
-            addServer(efMatch[2], efMatch[1]);
+        // 2. Dự phòng nếu "label" và "embedUrl" nằm gần nhau trong phạm vi ngắn
+        var nearRegex = /"label"\s*:\s*"([^"]+)"[\s\S]{0,160}?"embedUrl"\s*:\s*"([^"]+)"/gi;
+        var nearMatch;
+        while ((nearMatch = nearRegex.exec(cleanHtml)) !== null) {
+            addServer(nearMatch[1], nearMatch[2]);
         }
 
-        // 2. Bắt các link .m3u8 trực tiếp nếu có
-        var m3u8Regex = /(https?:\/\/[^"'\\\s<>]+\.m3u8[^"'\\\s<>]*)/gi;
-        var m3u8Match;
-        var m3u8Count = 1;
-        while ((m3u8Match = m3u8Regex.exec(html)) !== null) {
-            addServer("HLS / M3U8 #" + (m3u8Count++), m3u8Match[1]);
-        }
-
-        // 3. Bắt các link .mp4 trực tiếp nếu có
-        var mp4Regex = /(https?:\/\/[^"'\\\s<>]+\.mp4[^"'\\\s<>]*)/gi;
-        var mp4Match;
-        var mp4Count = 1;
-        while ((mp4Match = mp4Regex.exec(html)) !== null) {
-            addServer("MP4 #" + (mp4Count++), mp4Match[1]);
+        // 3. Bắt link .m3u8 hoặc .mp4 trực tiếp nếu có sẵn trong mã nguồn
+        var directRegex = /(https?:\/\/[^"'\s<>]+\.(?:m3u8|mp4)[^"'\s<>]*)/gi;
+        var directMatch;
+        var directCount = 1;
+        while ((directMatch = directRegex.exec(cleanHtml)) !== null) {
+            addServer("Direct #" + (directCount++), directMatch[1]);
         }
 
         // 4. Bắt thẻ <iframe> nếu có
         var iframeRegex = /<iframe[^>]+src=["']([^"']+)["']/gi;
         var iframeMatch;
         var iframeCount = 1;
-        while ((iframeMatch = iframeRegex.exec(html)) !== null) {
+        while ((iframeMatch = iframeRegex.exec(cleanHtml)) !== null) {
             addServer("Embed #" + (iframeCount++), iframeMatch[1]);
+        }
+
+        // 5. Nhánh dự phòng: suy đoán thư mục /hls/... từ ảnh screenshot.jpg
+        var shotRegex = /(https?:\/\/[^"'\s<>]+\/hls\/[^"'\s<>]*?)\/screenshot\.jpg/gi;
+        var shotMatch;
+        var shotCount = 1;
+        while ((shotMatch = shotRegex.exec(cleanHtml)) !== null) {
+            var hlsDir = shotMatch[1];
+            var idx = shotCount++;
+            addServer("HLS Dự phòng (master) #" + idx, hlsDir + "/master.m3u8");
+            addServer("HLS Dự phòng (playlist) #" + idx, hlsDir + "/playlist.m3u8");
+            addServer("HLS Dự phòng (index) #" + idx, hlsDir + "/index.m3u8");
         }
 
         return JSON.stringify({
@@ -299,6 +308,7 @@ function parseDetailResponse(html, episodeIdOrUrl) {
         });
     }
 }
+
 function parseCategoriesResponse(html) {
     return JSON.stringify([
         { name: "Mới Nhất", slug: "videos" },
