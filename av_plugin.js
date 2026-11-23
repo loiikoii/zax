@@ -191,18 +191,21 @@ function parseMovieDetail(html) {
             });
         }
 
-        // 1. Bắt các khối JSON chứa "label" và "embedUrl" (ví dụ: Server 3 / Streamtape)
-        var jsonObjRegex = /\{[^{}]*"embedUrl"\s*:\s*"([^"]+)"[^{}]*\}/gi;
-        var jsonMatch;
-        while ((jsonMatch = jsonObjRegex.exec(html)) !== null) {
-            var block = jsonMatch[0];
-            var embedVal = jsonMatch[1];
-            var labelMatch = block.match(/"label"\s*:\s*"([^"]+)"/i);
-            var labelName = labelMatch ? labelMatch[1] : ("Server " + (servers.length + 1));
-            addServer(labelName, embedVal);
+        // 1. Quét các khối có "label" và "embedUrl" (Server 1, Server 2, Server 3...)
+        var serverItemRegex = /"label"\s*:\s*"([^"]+)"\s*,\s*"embedUrl"\s*:\s*"([^"]+)"/gi;
+        var itemMatch;
+        while ((itemMatch = serverItemRegex.exec(html)) !== null) {
+            addServer(itemMatch[1], itemMatch[2]);
         }
 
-        // 2. Bắt các link .m3u8 trực tiếp
+        // Dự phòng nếu "embedUrl" đứng trước "label"
+        var embedFirstRegex = /"embedUrl"\s*:\s*"([^"]+)"[^}]*?"label"\s*:\s*"([^"]+)"/gi;
+        var efMatch;
+        while ((efMatch = embedFirstRegex.exec(html)) !== null) {
+            addServer(efMatch[2], efMatch[1]);
+        }
+
+        // 2. Bắt các link .m3u8 trực tiếp nếu có
         var m3u8Regex = /(https?:\/\/[^"'\\\s<>]+\.m3u8[^"'\\\s<>]*)/gi;
         var m3u8Match;
         var m3u8Count = 1;
@@ -210,7 +213,7 @@ function parseMovieDetail(html) {
             addServer("HLS / M3U8 #" + (m3u8Count++), m3u8Match[1]);
         }
 
-        // 3. Bắt các link .mp4 trực tiếp
+        // 3. Bắt các link .mp4 trực tiếp nếu có
         var mp4Regex = /(https?:\/\/[^"'\\\s<>]+\.mp4[^"'\\\s<>]*)/gi;
         var mp4Match;
         var mp4Count = 1;
@@ -218,15 +221,7 @@ function parseMovieDetail(html) {
             addServer("MP4 #" + (mp4Count++), mp4Match[1]);
         }
 
-        // 4. Bắt các link streamtape / embed khác nếu nằm rời
-        var stRegex = /(https?:\/\/(?:www\.)?streamtape\.com\/e\/[^"'\\\s<>]+)/gi;
-        var stMatch;
-        var stCount = 1;
-        while ((stMatch = stRegex.exec(html)) !== null) {
-            addServer("Streamtape #" + (stCount++), stMatch[1]);
-        }
-
-        // 5. Bắt thẻ <iframe> nếu có
+        // 4. Bắt thẻ <iframe> nếu có
         var iframeRegex = /<iframe[^>]+src=["']([^"']+)["']/gi;
         var iframeMatch;
         var iframeCount = 1;
