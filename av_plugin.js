@@ -170,24 +170,68 @@ function parseMovieDetail(html) {
         var ogImage = html.match(/property=["']og:image["'][^>]+content=["']([^"']+)["']/i);
         var ogDesc = html.match(/property=["']og:description["'][^>]+content=["']([^"']+)["']/i);
 
-        var streamUrl = "";
-        var m3u8Match = html.match(/(https?:\/\/[^"'\\\s<>]+\.m3u8[^"'\\\s<>]*)/i);
-        var mp4Match = html.match(/(https?:\/\/[^"'\\\s<>]+\.mp4[^"'\\\s<>]*)/i);
-        var embedMatch = html.match(/"embedUrl"\s*:\s*"(https?:\/\/[^"]+)"/i) ||
-                         html.match(/(https?:\/\/streamtape\.com\/e\/[^"'\\\s<>]+)/i);
-        var iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-
-        if (m3u8Match) streamUrl = m3u8Match[1];
-        else if (mp4Match) streamUrl = mp4Match[1];
-        else if (embedMatch) streamUrl = embedMatch[1].replace(/\\\//g, "/");
-        else if (iframeMatch) streamUrl = iframeMatch[1];
-
         var servers = [];
-        if (streamUrl) {
+        var seenUrls = {};
+
+        function addServer(serverName, streamUrl) {
+            if (!streamUrl) return;
+            var cleanUrl = String(streamUrl).replace(/\\\//g, "/").trim();
+            if (!cleanUrl || seenUrls[cleanUrl]) return;
+            seenUrls[cleanUrl] = true;
             servers.push({
-                name: "Server 1",
-                episodes: [{ id: streamUrl, name: "Full", slug: "full" }]
+                name: serverName || ("Server " + (servers.length + 1)),
+                episodes: [
+                    {
+                        id: cleanUrl,
+                        name: "Full",
+                        slug: "full",
+                        url: cleanUrl
+                    }
+                ]
             });
+        }
+
+        // 1. Bắt các khối JSON chứa "label" và "embedUrl" (ví dụ: Server 3 / Streamtape)
+        var jsonObjRegex = /\{[^{}]*"embedUrl"\s*:\s*"([^"]+)"[^{}]*\}/gi;
+        var jsonMatch;
+        while ((jsonMatch = jsonObjRegex.exec(html)) !== null) {
+            var block = jsonMatch[0];
+            var embedVal = jsonMatch[1];
+            var labelMatch = block.match(/"label"\s*:\s*"([^"]+)"/i);
+            var labelName = labelMatch ? labelMatch[1] : ("Server " + (servers.length + 1));
+            addServer(labelName, embedVal);
+        }
+
+        // 2. Bắt các link .m3u8 trực tiếp
+        var m3u8Regex = /(https?:\/\/[^"'\\\s<>]+\.m3u8[^"'\\\s<>]*)/gi;
+        var m3u8Match;
+        var m3u8Count = 1;
+        while ((m3u8Match = m3u8Regex.exec(html)) !== null) {
+            addServer("HLS / M3U8 #" + (m3u8Count++), m3u8Match[1]);
+        }
+
+        // 3. Bắt các link .mp4 trực tiếp
+        var mp4Regex = /(https?:\/\/[^"'\\\s<>]+\.mp4[^"'\\\s<>]*)/gi;
+        var mp4Match;
+        var mp4Count = 1;
+        while ((mp4Match = mp4Regex.exec(html)) !== null) {
+            addServer("MP4 #" + (mp4Count++), mp4Match[1]);
+        }
+
+        // 4. Bắt các link streamtape / embed khác nếu nằm rời
+        var stRegex = /(https?:\/\/(?:www\.)?streamtape\.com\/e\/[^"'\\\s<>]+)/gi;
+        var stMatch;
+        var stCount = 1;
+        while ((stMatch = stRegex.exec(html)) !== null) {
+            addServer("Streamtape #" + (stCount++), stMatch[1]);
+        }
+
+        // 5. Bắt thẻ <iframe> nếu có
+        var iframeRegex = /<iframe[^>]+src=["']([^"']+)["']/gi;
+        var iframeMatch;
+        var iframeCount = 1;
+        while ((iframeMatch = iframeRegex.exec(html)) !== null) {
+            addServer("Embed #" + (iframeCount++), iframeMatch[1]);
         }
 
         return JSON.stringify({
@@ -213,9 +257,30 @@ function parseMovieDetail(html) {
     }
 }
 
-function parseDetailResponse(html) {
+function parseDetailResponse(html, episodeIdOrUrl) {
     var detail = JSON.parse(parseMovieDetail(html));
-    var url = (detail && detail.servers && detail.servers.length > 0) ? detail.servers[0].episodes[0].id : "";
+    var url = "";
+
+    if (episodeIdOrUrl && /^https?:\/\//i.test(String(episodeIdOrUrl).trim())) {
+        url = String(episodeIdOrUrl).trim();
+    } else if (detail && detail.servers && detail.servers.length > 0) {
+        if (episodeIdOrUrl) {
+            for (var i = 0; i < detail.servers.length; i++) {
+                var eps = detail.servers[i].episodes || [];
+                for (var j = 0; j < eps.length; j++) {
+                    if (eps[j].id === episodeIdOrUrl || eps[j].url === episodeIdOrUrl) {
+                        url = eps[j].url || eps[j].id;
+                        break;
+                    }
+                }
+                if (url) break;
+            }
+        }
+        if (!url) {
+            url = detail.servers[0].episodes[0].url || detail.servers[0].episodes[0].id;
+        }
+    }
+
     return JSON.stringify({
         url: url,
         headers: {
@@ -225,7 +290,6 @@ function parseDetailResponse(html) {
         subtitles: []
     });
 }
-
 function parseCategoriesResponse(html) {
     return JSON.stringify([
         { name: "Mới Nhất", slug: "videos" },
